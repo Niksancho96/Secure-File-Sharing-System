@@ -1,8 +1,9 @@
 <?php
-    class Database {
+    class Core {
         
         private $_connStatus = false;
         private $_connData;
+        private $_error;
         
         public function __construct() {
             $conn = new MySQLi('localhost', 'root', '', 'shss');
@@ -22,19 +23,40 @@
         public function getConnectionData() {
             return $this->_connData;
         }
-        
-        public function logIn($username, $password, $secret_key) {
-            $query = $this->_connData->prepare("SELECT * FROM users WHERE username = ? AND password = ? AND secret_key = ?");
-            $query->bind_param("sss", $username, $password, $secret_key);
-            $query->execute();
-            $query->store_result();
 
-            $num = $query->num_rows();
-            if ($num != 0) {
-                $_SESSION['user'] = $username;
-                header("Location: main.php");
+        public function getErrorMessage() {
+            return $this->_error;
+        }
+
+        public function registerUser($dataArray) {
+            
+        }
+
+        public function logIn($dataArray) {
+            if ($dataArray['username'] == NULL || $dataArray['password'] == NULL || $dataArray['secret_key'] == NULL) {
+                $this->_error = "Всички полета трябва задължително да са попълнени!";
+            }
+
+            if (isset($this->_error)) {
+                echo $this->getErrorMessage();
             } else {
-                echo "Грешно потребителско име, парола или секретен ключ!";
+                $query = $this->_connData->prepare("SELECT * FROM users WHERE username = ? AND password = ? AND secret_key = ?");
+                $query->bind_param(
+                    "sss",
+                    $dataArray['username'],
+                    $dataArray['password'],
+                    $dataArray['secret_key']
+                );
+                $query->execute();
+                $query->store_result();
+
+                $num = $query->num_rows();
+                if ($num != 0) {
+                    $_SESSION['user'] = $username;
+                    header("Location: main.php");
+                } else {
+                    echo "Грешно потребителско име, парола или секретен ключ!";
+                }
             }
         }
         
@@ -58,7 +80,15 @@
             }
         }
         
-        public function getAllFiles() {
-            
+        public function redirectIfSetSession() {
+            if (isset($_SESSION['user'])) {
+                header("Location: main.php");
+            }
+        }
+
+        public function redirectIfNotSetSession() {
+            if (!isset($_SESSION['user'])) {
+                header("Location: index.php");
+            }
         }
     }
